@@ -1,5 +1,4 @@
-Насибуллин Эрик, 11-902
-Установка:
+Насибуллин Эрик, 11-902, установка:
 ```
 mkdir /tmp/nasibullin && cd /tmp/nasibullin
 wget -O CloudPhoto.jar https://github.com/Samurai9/CloudPhoto/raw/main/CloudPhoto.jar
