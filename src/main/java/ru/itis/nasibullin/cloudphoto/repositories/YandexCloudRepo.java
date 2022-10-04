@@ -15,10 +15,7 @@ import ru.itis.nasibullin.cloudphoto.utils.ConfigUtils;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class YandexCloudRepo {
     private final Config config;
@@ -38,20 +35,25 @@ public class YandexCloudRepo {
                 ).build();
     }
 
-    public void create(String name, File file, boolean isPublic) {
+    public void create(String name, File file) {
         PutObjectRequest request = new PutObjectRequest(config.getBucket(), name, file);
-        if (isPublic) {
-//            AccessControlList acl = storage.getBucketAcl(config.getBucket());
-//            SetBucketAclRequest setBucketAclRequest = ;
-//            acl.grantPermission(GroupGrantee.AllUsers, Permission.Read);
-//            request.setAccessControlList(acl);
-            storage.setBucketAcl(new SetBucketAclRequest(config.getBucket(), CannedAccessControlList.PublicRead));
-//            System.out.println(storage.getBucketAcl(config.getBucket()));
-        }
         storage.putObject(request);
     }
 
+    public void setBucketPublic() {
+        storage.setBucketAcl(new SetBucketAclRequest(config.getBucket(), CannedAccessControlList.PublicRead));
+    }
+
     public List<S3ObjectSummary> getAllImages(Arguments args) {
+        ListObjectsRequest request = new ListObjectsRequest();
+        request.setBucketName(config.getBucket());
+        request.setPrefix(args.getAlbum() + "/");
+        List<S3ObjectSummary> images = storage.listObjects(request).getObjectSummaries();
+        images.removeIf(image -> !image.getKey().contains(".jpg") && !image.getKey().contains(".jpeg"));
+        return images;
+    }
+
+    public List<S3ObjectSummary> getListImages(Arguments args) {
         ListObjectsRequest request = new ListObjectsRequest();
         request.setBucketName(config.getBucket());
         request.setPrefix(args.getAlbum());
@@ -74,14 +76,15 @@ public class YandexCloudRepo {
         return new ArrayList<>(albums);
     }
     public List<String> getDownloadImagesURL(Arguments arguments) {
-        List<String> albums = getAllAlbums();
+//        List<String> albums = getAllAlbums();
         List<String> urls = new ArrayList<>();
-        for (String album: albums) {
-            List<S3ObjectSummary> images = getAllImages(arguments);
-            for (S3ObjectSummary image: images) {
-                urls.add(storage.getUrl(config.getBucket(), image.getKey()).toString());
-            }
+        List<S3ObjectSummary> images = getAllImages(arguments);
+        for (S3ObjectSummary image: images) {
+            urls.add(storage.getUrl(config.getBucket(), image.getKey()).toString());
         }
+//        for (String album: albums) {
+//
+//        }
         return urls;
     }
 
@@ -95,7 +98,10 @@ public class YandexCloudRepo {
             throw new FileNotFoundException("Cannot find folder " + arguments.getPath());
         }
         if (!Files.isDirectory(Paths.get(arguments.getPath()))) {
-            throw new IllegalArgumentException("Not directory " + arguments.getPath());
+            String[] path = arguments.getPath().split(File.separator);
+            path = Arrays.copyOf(path, path.length-1);
+            arguments.setPath(String.join("/", path));
+//            throw new IllegalArgumentException("Not directory " + arguments.getPath());
         }
         for (S3ObjectSummary image: getAllImages(arguments)) {
             File saveFile = new File(arguments.getPath() + File.separator + image.getKey().split("/")[1]);

@@ -18,6 +18,11 @@ import java.util.List;
 public class UploadCommand implements Command<Void> {
     @Override
     public Result<Void> execute(Config config, Arguments arguments) {
+        if (!Files.isDirectory(Paths.get(arguments.getPath()))) {
+            String[] pathArray = arguments.getPath().split(File.separator);
+            pathArray = Arrays.copyOf(pathArray, pathArray.length-1);
+            arguments.setPath(String.join("/", pathArray));
+        }
         YandexCloudRepo repo = new YandexCloudRepo(config);
         List<File> uploadFiles = getFiles(arguments.getPath());
         if (uploadFiles.size() == 0) {
@@ -25,7 +30,7 @@ public class UploadCommand implements Command<Void> {
         }
         for (File file : uploadFiles) {
             try {
-                repo.create(arguments.getAlbum() + "/" + file.getName(), file, false);
+                repo.create(arguments.getAlbum() + "/" + file.getName(), file);
             } catch (Exception e) {
                 System.err.println("Exception while uploading photo: " + e.getMessage());
             }
@@ -38,9 +43,6 @@ public class UploadCommand implements Command<Void> {
     private List<File> getFiles(String path) {
         if (!Files.exists(Paths.get(path))) {
             throw new FileNotFoundException("Directory is not exists: " + path);
-        }
-        if (!Files.isDirectory(Paths.get(path))) {
-            throw new IllegalArgumentException("This is not directory: " + path);
         }
         List<File> files = new ArrayList<>();
         File directory = new File(path);

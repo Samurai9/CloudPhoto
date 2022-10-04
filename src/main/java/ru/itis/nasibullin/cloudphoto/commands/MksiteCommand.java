@@ -15,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 
 public class MksiteCommand implements Command<String> {
@@ -22,6 +23,12 @@ public class MksiteCommand implements Command<String> {
     @Override
     public Result<String> execute(Config config, Arguments args) {
         YandexCloudRepo repo = new YandexCloudRepo(config);
+        if (!Files.isDirectory(Paths.get(args.getPath()))) {
+            String[] pathArray = args.getPath().split(File.separator);
+            pathArray = Arrays.copyOf(pathArray, pathArray.length-1);
+            args.setPath(String.join("/", pathArray));
+        }
+        repo.setBucketPublic();
         List<String> albums = repo.getAllAlbums();
         StringBuilder albumBuilder = new StringBuilder();
         int i = 1;
@@ -43,7 +50,7 @@ public class MksiteCommand implements Command<String> {
                 writer.write(MksiteUtils.getAlbumPage(builder.toString()));
                 writer.flush();
             }
-            repo.create("album" + i + ".html", albumFile, true);
+            repo.create("album" + i + ".html", albumFile);
             Files.delete(Paths.get(filePath));
             albumBuilder.append("<li><a href=\"album").append(i).append(".html\"> ").append(album).append("</a></li>\n");
             i++;
@@ -59,7 +66,7 @@ public class MksiteCommand implements Command<String> {
             writer.write(MksiteUtils.getIndexPage(albumBuilder.toString()));
             writer.flush();
         }
-        repo.create("index.html", albumFile, true);
+        repo.create("index.html", albumFile);
         Files.delete(Paths.get(filePath));
         return new StringResult(repo.getDownloadURL("index.html"));
     }

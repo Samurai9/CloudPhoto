@@ -13,6 +13,10 @@ public class ListCommand implements Command<List<S3ObjectSummary>> {
     @Override
     public Result<List<S3ObjectSummary>> execute(Config config, Arguments args) {
         YandexCloudRepo repo = new YandexCloudRepo(config);
-        return new ListImagesResult(repo.getAllImages(args));
+        if (args.getAlbum() == null) {
+            return new ListImagesResult(repo.getListImages(args));
+        } else {
+            return new ListImagesResult(repo.getAllImages(args));
+        }
     }
 }

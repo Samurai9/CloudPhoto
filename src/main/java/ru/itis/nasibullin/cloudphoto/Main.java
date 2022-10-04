@@ -9,7 +9,10 @@ import ru.itis.nasibullin.cloudphoto.results.EmptyResult;
 import ru.itis.nasibullin.cloudphoto.utils.ArgsParser;
 import ru.itis.nasibullin.cloudphoto.utils.ConfigUtils;
 
+import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
 import java.util.*;
 
 public class Main {
